@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -23,6 +24,12 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Run tests
+    - name: Run pytest
       run: |
-        if [ -d tests ]; then pytest; fi
+        pytest tests/ --maxfail=1 --disable-warnings -q
+
+    - name: Start FastAPI with uvicorn (smoke test)
+      run: |
+        nohup uvicorn src.app:app --port 8080 --log-level warning &
+        sleep 5
+        curl -f http://127.0.0.1:8080/
