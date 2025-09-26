@@ -1,0 +1,5 @@
+version: "1.0"
+description: "Health monitor agent for AWS App Runner deployment"
+steps:
+  - name: "Ping App Runner endpoint"
+    command: "curl https://your-app-runner-endpoint.amazonaws.com/health"
