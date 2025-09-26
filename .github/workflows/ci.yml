@@ -1,35 +1,47 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Run pytest
-      run: |
-        pytest tests/ --maxfail=1 --disable-warnings -q
+      - name: Run pytest
+        run: |
+          pytest tests/ --maxfail=1 --disable-warnings -q
 
-    - name: Start FastAPI with uvicorn (smoke test)
-      run: |
-        nohup uvicorn src.app:app --port 8080 --log-level warning &
-        sleep 5
-        curl -f http://127.0.0.1:8080/
+      - name: Start FastAPI with uvicorn (smoke test)
+        run: |
+          nohup uvicorn src.app:app --port 8080 --log-level warning &
+          sleep 5
+          curl -f http://127.0.0.1:8080/
+
+  health_check:
+    needs: build_and_test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Perform health check on deployed app
+        run: |
+          curl -f https://your-app-runner-endpoint.amazonaws.com/health
+
